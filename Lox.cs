@@ -28,8 +28,8 @@ public class Lox
         while (true)
             {
             Console.Write("> ");
-            //string? line = Console.ReadLine();
-            string? line = "\"hi\" () \"there\"";
+            string? line = Console.ReadLine();
+            //string? line = "\"hi\" () \"there\"";
             if (line == null)
                 break;
             run(line);
@@ -58,10 +58,7 @@ public class Lox
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
 
-        foreach (Token token in tokens)
-        {
-            Console.Write(token);
-        }
+        Console.WriteLine(string.Join(" # ", tokens));
         Console.WriteLine();
     }
 

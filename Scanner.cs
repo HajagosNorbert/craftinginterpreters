@@ -32,6 +32,7 @@ public class Scanner
     private void scanToken()
     {
         char c = advance();
+
         switch (c)
         {
             case '(': addToken(TokenType.LEFT_PAREN); break;
@@ -75,34 +76,72 @@ public class Scanner
                 line++;
                 break;
 
-            case '"': 
+            case '"':
                 scanString();
                 break;
 
             default:
-                Lox.error(line, "Unexpected character: " + c);
+                if (isDigit(c))
+                {
+                    scanNumber();
+                }
+                else
+                {
+                    Lox.error(line, "Unexpected character: " + c);
+                }
                 break;
         }
     }
 
+    private void scanNumber()
+    {
+        while (isDigit(peek()))
+        {
+            advance();
+        }
+
+
+        if (peek() == '.' && isDigit(peekNext()))
+        {
+            advance();
+            while (isDigit(peek()))
+            {
+                advance();
+            }
+        }
+
+        double numberLiteral = Convert.ToDouble(source.Substring(start, current - start));
+        addToken(TokenType.NUMBER, numberLiteral);
+    }
+
+    private char peekNext()
+    {
+        if (current + 1 >= source.Length) return '\0';
+        return source[current + 1];
+    }
+
+    private bool isDigit(char c)
+    {
+        return '0' <= c && c <= '9';
+    }
+
     private void scanString()
     {
-        char peekRes = peek();
-
-        while(!isAtEnd() && peekRes != '"' && peekRes != '\n') {
-            peekRes = advance();
+        while (!isAtEnd() && peek() != '"')
+        {
+            if (source[current] == '\n') ++line;
+            advance();
         }
 
-        if(peekRes != '"' ) {
-            Lox.error(line, "String litteral not closed on the same line");
+        if (source[current] != '"')
+        {
+            Lox.error(line, "String litteral doesn't have a closing quote");
             return;
         }
-
-        // current is the closing quote
-        string strLiteral = source.Substring(start+1, current - start -2);
+        int beginningOfStrLiteral = start + 1;
+        string strLiteral = source.Substring(beginningOfStrLiteral, current - beginningOfStrLiteral);
+        if (!isAtEnd()) advance();
         addToken(TokenType.STRING, strLiteral);
-        if(!isAtEnd()) advance();
-
     }
 
     private char peek()
