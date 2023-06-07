@@ -1,9 +1,9 @@
 public readonly struct Token {
     
-    readonly TokenType Type { get; init; } 
-    readonly string Lexeme { get; init; }
-    readonly Object Literal { get; init; }
-    readonly int Line { get; init; } 
+    public readonly TokenType Type { get; init; } 
+    public readonly string Lexeme { get; init; }
+    public readonly Object Literal { get; init; }
+    public readonly int Line { get; init; } 
 
     public Token (TokenType type, string lexeme, Object literal, int line) {
         Type = type;

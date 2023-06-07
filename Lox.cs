@@ -1,11 +1,17 @@
 ﻿namespace Lox;
-
+//TODO: Implement the ternary operator
 public class Lox
 {
     static bool hadError = false;
+    static bool hadRuntimeError = false;
+    static readonly AstPrinter astPrinter = new AstPrinter();
+    static readonly Interpreter interpreter = new Interpreter();
 
     private static int Main(string[] args)
     {
+        // run("(4/2)");
+        // return 0;
+
         if (args.Length > 1)
         {
             Console.WriteLine("Usage: shaprlox [script]");
@@ -21,15 +27,15 @@ public class Lox
         }
 
         return 0;
+
     }
 
     private static void runPrompt()
     {
         while (true)
-            {
+        {
             Console.Write("> ");
             string? line = Console.ReadLine();
-            //string? line = "\"hi\" () \"there\"";
             if (line == null)
                 break;
             run(line);
@@ -39,13 +45,13 @@ public class Lox
 
     private static void runFile(string file)
     {
-        Console.WriteLine("Reading file: "+ file);
+        Console.WriteLine("Reading file: " + file);
         try
         {
             string content = File.ReadAllText(file);
             run(content);
-            if (hadError)
-                Environment.Exit(65);
+            if (hadError) Environment.Exit(65);
+            if (hadRuntimeError) Environment.Exit(70);
         }
         catch (Exception _)
         {
@@ -57,11 +63,24 @@ public class Lox
     {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-
-        Console.WriteLine(string.Join(" # ", tokens));
-        Console.WriteLine();
+        Parser parser = new Parser(tokens);
+        Expr expr = parser.parse();
+        Console.WriteLine(astPrinter.print(expr));
+        interpreter.interpret(expr);
     }
 
+
+    public static void error(Token token, string message)
+    {
+        if (token.Type == TokenType.EOF)
+        {
+            report(token.Line, " at end of file", message);
+        }
+        else
+        {
+            report(token.Line, $" at `{token.Lexeme}`", message);
+        }
+    }
 
     public static void error(int line, string message)
     {
@@ -72,5 +91,11 @@ public class Lox
     {
         Console.WriteLine("[line " + line + "] Error" + where + ": " + message);
         hadError = true;
+    }
+
+    public static void runtimeError(RuntimeError e)
+    {
+        Console.WriteLine(e.Message + "\n[line " + e.token.Line + "]");
+        hadRuntimeError = true;
     }
 }

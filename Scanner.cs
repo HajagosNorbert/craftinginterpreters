@@ -2,6 +2,24 @@ namespace Lox;
 
 public class Scanner
 {
+    private static readonly Dictionary<string, TokenType> keywords = new() {
+        { "and", TokenType.AND },
+        { "class", TokenType.CLASS },
+        { "else", TokenType.ELSE },
+        { "false", TokenType.FALSE },
+        { "for", TokenType.FOR },
+        { "fun", TokenType.FUN },
+        { "if", TokenType.IF },
+        { "nil", TokenType.NIL },
+        { "or", TokenType.OR },
+        { "print", TokenType.PRINT },
+        { "return", TokenType.RETURN },
+        { "super", TokenType.SUPER },
+        { "this", TokenType.THIS },
+        { "true", TokenType.TRUE },
+        { "var", TokenType.VAR },
+        { "while", TokenType.WHILE }
+    };
     private readonly string source;
     private readonly List<Token> tokens = new List<Token>();
 
@@ -84,6 +102,8 @@ public class Scanner
                 if (isDigit(c))
                 {
                     scanNumber();
+                } else if(isAlpha(c)) {
+                    scanIdentifier();
                 }
                 else
                 {
@@ -92,6 +112,22 @@ public class Scanner
                 break;
         }
     }
+
+    private void scanIdentifier()
+    {
+        while(isAlphaNumeric(peek())) {advance();}
+
+        string text = source.Substring(start, current - start);
+        TokenType type = keywords.GetValueOrDefault(text, TokenType.IDENTIFIER);
+        addToken(type);
+    }
+
+    private bool isAlpha(char c)
+    {
+        return c == '_' || ('a' <= c && c <= 'z') || (('A' <= c && c <= 'Z'));
+    }
+
+    private bool isAlphaNumeric(char c) => isDigit(c) || isAlpha(c);
 
     private void scanNumber()
     {
