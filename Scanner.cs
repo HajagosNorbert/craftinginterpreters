@@ -2,7 +2,7 @@ namespace Lox;
 
 public class Scanner
 {
-    private static readonly Dictionary<string, TokenType> keywords = new() {
+    private static readonly Dictionary<string, TokenType> _keywords = new() {
         { "and", TokenType.AND },
         { "class", TokenType.CLASS },
         { "else", TokenType.ELSE },
@@ -20,68 +20,68 @@ public class Scanner
         { "var", TokenType.VAR },
         { "while", TokenType.WHILE }
     };
-    private readonly string source;
-    private readonly List<Token> tokens = new List<Token>();
+    private readonly string _source;
+    private readonly List<Token> _tokens = new List<Token>();
 
-    private int start = 0;
-    private int current = 0;
-    private int line = 1;
+    private int _start = 0;
+    private int _current = 0;
+    private int _line = 1;
 
 
     public Scanner(string source)
     {
-        this.source = source;
+        this._source = source;
     }
 
 
-    internal List<Token> scanTokens()
+    internal List<Token> ScanTokens()
     {
-        while (!isAtEnd())
+        while (!IsAtEnd())
         {
-            start = current;
-            scanToken();
+            _start = _current;
+            ScanToken();
         }
 
-        tokens.Add(new Token(TokenType.EOF, "", null, current));
-        return tokens;
+        _tokens.Add(new Token(TokenType.EOF, "", null, _line));
+        return _tokens;
 
     }
 
-    private void scanToken()
+    private void ScanToken()
     {
-        char c = advance();
+        char c = Advance();
 
         switch (c)
         {
-            case '(': addToken(TokenType.LEFT_PAREN); break;
-            case ')': addToken(TokenType.RIGHT_PAREN); break;
-            case '{': addToken(TokenType.LEFT_BRACE); break;
-            case '}': addToken(TokenType.RIGHT_BRACE); break;
-            case ',': addToken(TokenType.COMMA); break;
-            case '.': addToken(TokenType.DOT); break;
-            case '-': addToken(TokenType.MINUS); break;
-            case '+': addToken(TokenType.PLUS); break;
-            case ';': addToken(TokenType.SEMICOLON); break;
-            case '*': addToken(TokenType.STAR); break;
+            case '(': AddToken(TokenType.LEFT_PAREN); break;
+            case ')': AddToken(TokenType.RIGHT_PAREN); break;
+            case '{': AddToken(TokenType.LEFT_BRACE); break;
+            case '}': AddToken(TokenType.RIGHT_BRACE); break;
+            case ',': AddToken(TokenType.COMMA); break;
+            case '.': AddToken(TokenType.DOT); break;
+            case '-': AddToken(TokenType.MINUS); break;
+            case '+': AddToken(TokenType.PLUS); break;
+            case ';': AddToken(TokenType.SEMICOLON); break;
+            case '*': AddToken(TokenType.STAR); break;
 
             case '!':
-                addToken(match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
+                AddToken(Match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
                 break;
             case '=':
-                addToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
+                AddToken(Match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
                 break;
             case '<':
-                addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
+                AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
                 break;
             case '>':
-                addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
+                AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
                 break;
 
             case '/':
-                if (match('/'))
-                    while (!isAtEnd() && peek() != '\n') advance();
+                if (Match('/'))
+                    while (!IsAtEnd() && Peek() != '\n') Advance();
                 else
-                    addToken(TokenType.SLASH);
+                    AddToken(TokenType.SLASH);
                 break;
 
             case ' ':
@@ -91,23 +91,23 @@ public class Scanner
                 break;
 
             case '\n':
-                line++;
+                _line++;
                 break;
 
             case '"':
-                scanString();
+                ScanString();
                 break;
 
             default:
-                if (isDigit(c))
+                if (IsDigit(c))
                 {
-                    scanNumber();
-                } else if(isAlpha(c)) {
+                    ScanNumber();
+                } else if(IsAlpha(c)) {
                     scanIdentifier();
                 }
                 else
                 {
-                    Lox.error(line, "Unexpected character: " + c);
+                    Lox.Error(_line, "Unexpected character: " + c);
                 }
                 break;
         }
@@ -115,100 +115,100 @@ public class Scanner
 
     private void scanIdentifier()
     {
-        while(isAlphaNumeric(peek())) {advance();}
+        while(IsAlphaNumeric(Peek())) {Advance();}
 
-        string text = source.Substring(start, current - start);
-        TokenType type = keywords.GetValueOrDefault(text, TokenType.IDENTIFIER);
-        addToken(type);
+        string text = _source.Substring(_start, _current - _start);
+        TokenType type = _keywords.GetValueOrDefault(text, TokenType.IDENTIFIER);
+        AddToken(type);
     }
 
-    private bool isAlpha(char c)
+    private bool IsAlpha(char c)
     {
         return c == '_' || ('a' <= c && c <= 'z') || (('A' <= c && c <= 'Z'));
     }
 
-    private bool isAlphaNumeric(char c) => isDigit(c) || isAlpha(c);
+    private bool IsAlphaNumeric(char c) => IsDigit(c) || IsAlpha(c);
 
-    private void scanNumber()
+    private void ScanNumber()
     {
-        while (isDigit(peek()))
+        while (IsDigit(Peek()))
         {
-            advance();
+            Advance();
         }
 
 
-        if (peek() == '.' && isDigit(peekNext()))
+        if (Peek() == '.' && IsDigit(PeekNext()))
         {
-            advance();
-            while (isDigit(peek()))
+            Advance();
+            while (IsDigit(Peek()))
             {
-                advance();
+                Advance();
             }
         }
 
-        double numberLiteral = Convert.ToDouble(source.Substring(start, current - start));
-        addToken(TokenType.NUMBER, numberLiteral);
+        double numberLiteral = Convert.ToDouble(_source.Substring(_start, _current - _start));
+        AddToken(TokenType.NUMBER, numberLiteral);
     }
 
-    private char peekNext()
+    private char PeekNext()
     {
-        if (current + 1 >= source.Length) return '\0';
-        return source[current + 1];
+        if (_current + 1 >= _source.Length) return '\0';
+        return _source[_current + 1];
     }
 
-    private bool isDigit(char c)
+    private bool IsDigit(char c)
     {
         return '0' <= c && c <= '9';
     }
 
-    private void scanString()
+    private void ScanString()
     {
-        while (!isAtEnd() && peek() != '"')
+        while (!IsAtEnd() && Peek() != '"')
         {
-            if (source[current] == '\n') ++line;
-            advance();
+            if (_source[_current] == '\n') ++_line;
+            Advance();
         }
 
-        if (source[current] != '"')
+        if (_source[_current] != '"')
         {
-            Lox.error(line, "String litteral doesn't have a closing quote");
+            Lox.Error(_line, "String litteral doesn't have a closing quote");
             return;
         }
-        int beginningOfStrLiteral = start + 1;
-        string strLiteral = source.Substring(beginningOfStrLiteral, current - beginningOfStrLiteral);
-        if (!isAtEnd()) advance();
-        addToken(TokenType.STRING, strLiteral);
+        int beginningOfStrLiteral = _start + 1;
+        string strLiteral = _source.Substring(beginningOfStrLiteral, _current - beginningOfStrLiteral);
+        if (!IsAtEnd()) Advance();
+        AddToken(TokenType.STRING, strLiteral);
     }
 
-    private char peek()
+    private char Peek()
     {
-        if (isAtEnd()) return '\0';
-        return source[current];
+        if (IsAtEnd()) return '\0';
+        return _source[_current];
     }
 
-    private bool match(char expected)
+    private bool Match(char expected)
     {
-        if (isAtEnd()) return false;
-        if (source[current] != expected) return false;
+        if (IsAtEnd()) return false;
+        if (_source[_current] != expected) return false;
 
-        ++current;
+        ++_current;
         return true;
     }
 
-    private void addToken(TokenType type) => addToken(type, null);
+    private void AddToken(TokenType type) => AddToken(type, null);
 
-    private void addToken(TokenType type, Object literal)
+    private void AddToken(TokenType type, Object literal)
     {
-        string text = source.Substring(start, current - start);
-        tokens.Add(new Token(type, text, literal, line));
+        string text = _source.Substring(_start, _current - _start);
+        _tokens.Add(new Token(type, text, literal, _line));
     }
 
 
-    private char advance() => source[current++];
+    private char Advance() => _source[_current++];
 
-    private bool isAtEnd() => current >= source.Length;
+    private bool IsAtEnd() => _current >= _source.Length;
 
-    public List<Token> scan()
+    public List<Token> Scan()
     {
         throw new NotImplementedException();
     }

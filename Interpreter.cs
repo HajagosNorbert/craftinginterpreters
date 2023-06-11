@@ -1,45 +1,56 @@
 namespace Lox;
 
-class Interpreter : Expr.Visitor<Object>
+class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 {
-    public void interpret(Expr expr)
+    private LoxEnvironment _environment = new LoxEnvironment();
+    public void Interpret(List<Stmt> statements)
     {
-        try {
-            object res = evaluate(expr);
-            Console.WriteLine(stringify(res));
-        } catch(RuntimeError e){
-            Lox.runtimeError(e);
+        try
+        {
+            foreach (Stmt stmt in statements)
+            {
+                Execute(stmt);
+            }
+        }
+        catch (RuntimeError e)
+        {
+            Lox.RuntimeError(e);
         }
     }
 
-    public object evaluate(Expr expr)
+    private void Execute(Stmt stmt)
     {
-        return expr.accept(this);
+        stmt.Accept(this);
     }
 
-    public object visitBinaryExpr(Expr.BinaryExpr binary)
+    public object Evaluate(Expr expr)
     {
-        object left = evaluate(binary.left);
-        object right = evaluate(binary.right);
+        return expr.Accept(this);
+    }
+
+    public object VisitBinaryExpr(Expr.BinaryExpr binary)
+    {
+        object left = Evaluate(binary.left);
+        object right = Evaluate(binary.right);
 
         switch (binary.operatr.Type)
         {
             case TokenType.GREATER:
-                return parseDouble(binary.operatr,left) > parseDouble(binary.operatr,right);
+                return ParseDouble(binary.operatr, left) > ParseDouble(binary.operatr, right);
             case TokenType.GREATER_EQUAL:
-                return parseDouble(binary.operatr,left) >= parseDouble(binary.operatr,right);
+                return ParseDouble(binary.operatr, left) >= ParseDouble(binary.operatr, right);
             case TokenType.LESS:
-                return parseDouble(binary.operatr,left) < parseDouble(binary.operatr,right);
+                return ParseDouble(binary.operatr, left) < ParseDouble(binary.operatr, right);
             case TokenType.LESS_EQUAL:
-                return parseDouble(binary.operatr,left) <= parseDouble(binary.operatr,right);
-            case TokenType.BANG_EQUAL: return !isEqual(left, right);
-            case TokenType.EQUAL_EQUAL: return isEqual(left, right);
+                return ParseDouble(binary.operatr, left) <= ParseDouble(binary.operatr, right);
+            case TokenType.BANG_EQUAL: return !IsEqual(left, right);
+            case TokenType.EQUAL_EQUAL: return IsEqual(left, right);
             case TokenType.MINUS:
-                return parseDouble(binary.operatr,left) - parseDouble(binary.operatr,right);
+                return ParseDouble(binary.operatr, left) - ParseDouble(binary.operatr, right);
             case TokenType.SLASH:
-                return parseDouble(binary.operatr,left) / parseNonZero(binary.operatr, parseDouble(binary.operatr,right));
+                return ParseDouble(binary.operatr, left) / ParseNonZero(binary.operatr, ParseDouble(binary.operatr, right));
             case TokenType.STAR:
-                return parseDouble(binary.operatr,left) * parseDouble(binary.operatr,right);
+                return ParseDouble(binary.operatr, left) * ParseDouble(binary.operatr, right);
             case TokenType.PLUS:
                 if (left is string leftStr && right is string rightStr)
                 {
@@ -47,7 +58,7 @@ class Interpreter : Expr.Visitor<Object>
                 }
                 else if (left is string str)
                 {
-                    return str + stringify(right);
+                    return str + Stringify(right);
                 }
                 else if (left is Double leftDouble && right is Double rightDouble)
                 {
@@ -58,38 +69,38 @@ class Interpreter : Expr.Visitor<Object>
         return null;
     }
 
-    public object visitGroupingExpr(Expr.GroupingExpr grouping)
+    public object VisitGroupingExpr(Expr.GroupingExpr grouping)
     {
-        return evaluate(grouping.expression);
+        return Evaluate(grouping.expression);
     }
 
 
-    public object visitLiteralExpr(Expr.LiteralExpr literal)
+    public object VisitLiteralExpr(Expr.LiteralExpr literal)
     {
         return literal.value;
     }
 
-    public object visitUnaryExpr(Expr.UnaryExpr unary)
+    public object VisitUnaryExpr(Expr.UnaryExpr unary)
     {
-        object right = evaluate(unary.right);
+        object right = Evaluate(unary.right);
         switch (unary.operatr.Type)
         {
             case TokenType.MINUS:
-                return - parseDouble(unary.operatr, right);
+                return -ParseDouble(unary.operatr, right);
 
             case TokenType.BANG:
-                return !isTruthy(right);
+                return !IsTruthy(right);
         }
 
         return null;
     }
 
-    private bool isTruthy(object obj)
+    private bool IsTruthy(object obj)
     {
         return !(obj == null || (obj is bool val && val == false));
     }
 
-    private bool isEqual(object left, object right)
+    private bool IsEqual(object left, object right)
     {
         if (left == null && right == null)
         {
@@ -102,31 +113,95 @@ class Interpreter : Expr.Visitor<Object>
         return left.Equals(right);
     }
 
-    private double parseDouble(Token operatr, object operand) {
-        if (operand is Double num){
+    private double ParseDouble(Token operatr, object operand)
+    {
+        if (operand is Double num)
+        {
             return num;
         }
         throw new RuntimeError(operatr, "Operand must be a number.");
     }
 
-    private double parseNonZero(Token operatr, double num)
+    private double ParseNonZero(Token operatr, double num)
     {
-        if (num != 0){
+        if (num != 0)
+        {
             return num;
         }
         throw new RuntimeError(operatr, "Cannont divide by zero!");
     }
 
-    private string stringify(object obj)
+    private string Stringify(object obj)
     {
-        if(obj == null) return "nil";
-        if (obj is Double num) {
+        if (obj == null) return "nil";
+        if (obj is Double num)
+        {
             string numericText = num.ToString();
-            if(numericText.EndsWith(".0")) {
+            if (numericText.EndsWith(".0"))
+            {
                 numericText = numericText.Substring(0, numericText.Length - 2);
             }
             return numericText;
         }
         return obj.ToString();
+    }
+
+    public object VisitExpressionStmt(Stmt.ExpressionStmt stmt)
+    {
+        Evaluate(stmt.expression);
+        return null;
+    }
+
+    public object VisitPrintStmt(Stmt.PrintStmt stmt)
+    {
+        var expr = Evaluate(stmt.expression);
+        Console.WriteLine(Stringify(expr));
+        return null;
+    }
+
+    public object VisitVarStmt(Stmt.VarStmt var)
+    {
+        object initValue = null;
+        if (var.initializer is not null)
+        {
+            initValue = Evaluate(var.initializer);
+        }
+        _environment.Define(var.name.Lexeme, initValue);
+        return null;
+    }
+
+    public object VisitVariableExpr(Expr.VariableExpr variable)
+    {
+        return _environment.Get(variable.name);
+    }
+
+    public object VisitAssignExpr(Expr.AssignExpr assign)
+    {
+        _environment.Assign(assign.name, Evaluate(assign.value));
+        return assign.value;
+    }
+
+    public object VisitBlockStmt(Stmt.BlockStmt stmt)
+    {
+        ExecuteBlock(stmt.statements, new LoxEnvironment(_environment));
+        return null;
+    }
+
+    private void ExecuteBlock(List<Stmt> statements, LoxEnvironment newEnvironment)
+    {
+        LoxEnvironment previousEnv = _environment;
+
+        try
+        {
+            _environment = newEnvironment;
+            foreach (Stmt stmt in statements)
+            {
+                Execute(stmt);
+            }
+        }
+        finally
+        {
+            _environment = previousEnv;
+        }
     }
 }

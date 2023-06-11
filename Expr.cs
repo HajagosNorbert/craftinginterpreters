@@ -1,69 +1,78 @@
 namespace Lox;
 
-abstract class Expr
-{
-    public abstract T accept<T>(Visitor<T> visitor);
+abstract class Expr {
 
-    public interface Visitor<T>
-    {
-        public T visitBinaryExpr(BinaryExpr binary);
-        public T visitGroupingExpr(GroupingExpr grouping);
-        public T visitLiteralExpr(LiteralExpr literal);
-        public T visitUnaryExpr(UnaryExpr unary);
-    }
+public abstract T Accept<T>(Visitor<T> visitor);
 
-    public class BinaryExpr : Expr
-    {
-        public readonly Expr left;
-        public readonly Token operatr;
-        public readonly Expr right;
-        public BinaryExpr(Expr left, Token operatr, Expr right)
-        {
-            this.left = left;
-            this.operatr = operatr;
-            this.right = right;
-        }
-        public override T accept<T>(Visitor<T> visitor)
-        {
-            return visitor.visitBinaryExpr(this);
-        }
-    }
-    public class GroupingExpr : Expr
-    {
-        public readonly Expr expression;
-        public GroupingExpr(Expr expression)
-        {
-            this.expression = expression;
-        }
-        public override T accept<T>(Visitor<T> visitor)
-        {
-            return visitor.visitGroupingExpr(this);
-        }
-    }
-    public class LiteralExpr : Expr
-    {
-        public readonly Object? value;
-        public LiteralExpr(Object? value)
-        {
-            this.value = value;
-        }
-        public override T accept<T>(Visitor<T> visitor)
-        {
-            return visitor.visitLiteralExpr(this);
-        }
-    }
-    public class UnaryExpr : Expr
-    {
-        public readonly Token operatr;
-        public readonly Expr right;
-        public UnaryExpr(Token operatr, Expr right)
-        {
-            this.operatr = operatr;
-            this.right = right;
-        }
-        public override T accept<T>(Visitor<T> visitor)
-        {
-            return visitor.visitUnaryExpr(this);
-        }
-    }
+public interface Visitor<T> {
+      public T VisitAssignExpr(AssignExpr assign);
+      public T VisitBinaryExpr(BinaryExpr binary);
+      public T VisitGroupingExpr(GroupingExpr grouping);
+      public T VisitLiteralExpr(LiteralExpr literal);
+      public T VisitUnaryExpr(UnaryExpr unary);
+      public T VisitVariableExpr(VariableExpr variable);
+}
+
+  public class AssignExpr: Expr{
+      public readonly Token name;
+      public readonly Expr value;
+      public AssignExpr(Token name, Expr value) {
+          this.name = name;
+          this.value = value;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitAssignExpr(this);
+      }
+  }
+  public class BinaryExpr: Expr{
+      public readonly Expr left;
+      public readonly Token operatr;
+      public readonly Expr right;
+      public BinaryExpr(Expr left, Token operatr, Expr right) {
+          this.left = left;
+          this.operatr = operatr;
+          this.right = right;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitBinaryExpr(this);
+      }
+  }
+  public class GroupingExpr: Expr{
+      public readonly Expr expression;
+      public GroupingExpr(Expr expression) {
+          this.expression = expression;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitGroupingExpr(this);
+      }
+  }
+  public class LiteralExpr: Expr{
+      public readonly Object value;
+      public LiteralExpr(Object value) {
+          this.value = value;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitLiteralExpr(this);
+      }
+  }
+  public class UnaryExpr: Expr{
+      public readonly Token operatr;
+      public readonly Expr right;
+      public UnaryExpr(Token operatr, Expr right) {
+          this.operatr = operatr;
+          this.right = right;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitUnaryExpr(this);
+      }
+  }
+  public class VariableExpr: Expr{
+      public readonly Token name;
+      public VariableExpr(Token name) {
+          this.name = name;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitVariableExpr(this);
+      }
+  }
 }

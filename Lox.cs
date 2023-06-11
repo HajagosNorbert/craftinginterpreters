@@ -12,6 +12,7 @@ public class Lox
         // run("(4/2)");
         // return 0;
 
+        args = args.Append("sample.lox").ToArray();
         if (args.Length > 1)
         {
             Console.WriteLine("Usage: shaprlox [script]");
@@ -19,18 +20,18 @@ public class Lox
         }
         else if (args.Length == 1)
         {
-            runFile(args[0]);
+            RunFile(args[0]);
         }
         else
         {
-            runPrompt();
+            RunPrompt();
         }
 
         return 0;
 
     }
 
-    private static void runPrompt()
+    private static void RunPrompt()
     {
         while (true)
         {
@@ -38,18 +39,18 @@ public class Lox
             string? line = Console.ReadLine();
             if (line == null)
                 break;
-            run(line);
+            Run(line);
             hadError = false;
         }
     }
 
-    private static void runFile(string file)
+    private static void RunFile(string file)
     {
         Console.WriteLine("Reading file: " + file);
         try
         {
             string content = File.ReadAllText(file);
-            run(content);
+            Run(content);
             if (hadError) Environment.Exit(65);
             if (hadRuntimeError) Environment.Exit(70);
         }
@@ -59,43 +60,42 @@ public class Lox
         }
     }
 
-    private static void run(string source)
+    private static void Run(string source)
     {
         Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.scanTokens();
+        List<Token> tokens = scanner.ScanTokens();
         Parser parser = new Parser(tokens);
-        Expr expr = parser.parse();
-        Console.WriteLine(astPrinter.print(expr));
-        interpreter.interpret(expr);
+        List<Stmt> statements = parser.Parse();
+        interpreter.Interpret(statements);
     }
 
 
-    public static void error(Token token, string message)
+    public static void Error(Token token, string message)
     {
         if (token.Type == TokenType.EOF)
         {
-            report(token.Line, " at end of file", message);
+            Report(token.Line, " at end of file", message);
         }
         else
         {
-            report(token.Line, $" at `{token.Lexeme}`", message);
+            Report(token.Line, $" at `{token.Lexeme}`", message);
         }
     }
 
-    public static void error(int line, string message)
+    public static void Error(int line, string message)
     {
-        report(line, "", message);
+        Report(line, "", message);
     }
 
-    private static void report(int line, string where, string message)
+    private static void Report(int line, string where, string message)
     {
         Console.WriteLine("[line " + line + "] Error" + where + ": " + message);
         hadError = true;
     }
 
-    public static void runtimeError(RuntimeError e)
+    public static void RuntimeError(RuntimeError e)
     {
-        Console.WriteLine(e.Message + "\n[line " + e.token.Line + "]");
+        Console.WriteLine(e.Message + "\n[line " + e.Token.Line + "]");
         hadRuntimeError = true;
     }
 }

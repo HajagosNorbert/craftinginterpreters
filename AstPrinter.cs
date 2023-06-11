@@ -5,7 +5,7 @@ class AstPrinter : Expr.Visitor<string>
 
     public string print(Expr expr)
     {
-        return expr.accept(this);
+        return expr.Accept(this);
     }
 
     private string parenthesize(string name, params Expr[] expresssions)
@@ -14,17 +14,17 @@ class AstPrinter : Expr.Visitor<string>
         return "(" + name +" "+ exprStr + ")";
     }
 
-    public string visitBinaryExpr(Expr.BinaryExpr binary)
+    public string VisitBinaryExpr(Expr.BinaryExpr binary)
     {
         return parenthesize(binary.operatr.Lexeme, binary.left, binary.right);
     }
 
-    public string visitGroupingExpr(Expr.GroupingExpr grouping)
+    public string VisitGroupingExpr(Expr.GroupingExpr grouping)
     {
         return parenthesize("group", grouping.expression);
     }
 
-    public string visitLiteralExpr(Expr.LiteralExpr literal)
+    public string VisitLiteralExpr(Expr.LiteralExpr literal)
     {
         string strValueOfLiteral;
         if (literal?.value is null){
@@ -38,9 +38,19 @@ class AstPrinter : Expr.Visitor<string>
         return strValueOfLiteral;
     }
 
-    public string visitUnaryExpr(Expr.UnaryExpr unary)
+    public string VisitUnaryExpr(Expr.UnaryExpr unary)
     {
         return parenthesize(unary.operatr.Lexeme, unary.right);
+    }
+
+    public string VisitVariableExpr(Expr.VariableExpr variable)
+    {
+        return "( var_access: " + variable.name + " )";
+    }
+
+    public string VisitAssignExpr(Expr.AssignExpr assign)
+    {
+        return parenthesize("assign " + assign.name + " to ", assign.value);
     }
 }
 
