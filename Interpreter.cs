@@ -214,4 +214,14 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         }
         return null;
     }
+
+    public object VisitLogicalExpr(Expr.LogicalExpr logical)
+    {
+        bool isLeftTruthy = IsTruthy(Evaluate(logical.left));
+        if(logical.operatr.Type == TokenType.AND && !isLeftTruthy || logical.operatr.Type == TokenType.OR && isLeftTruthy){
+            return Evaluate(logical.left);
+        }
+        return Evaluate(logical.right);
+        
+    }
 }

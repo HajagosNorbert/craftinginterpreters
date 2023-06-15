@@ -52,5 +52,10 @@ class AstPrinter : Expr.Visitor<string>
     {
         return parenthesize("assign " + assign.name + " to ", assign.value);
     }
+
+    public string VisitLogicalExpr(Expr.LogicalExpr logical)
+    {
+        return VisitBinaryExpr(new Expr.BinaryExpr(logical.left, logical.operatr, logical.right));
+    }
 }
 

@@ -1,6 +1,5 @@
-if ("hi") {
+if (false or false) {
   print "yess";
 } else if (nil) {
         print "double trouble";
-    }
-print "nothing happened";
+}
