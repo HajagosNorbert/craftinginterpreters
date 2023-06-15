@@ -204,4 +204,14 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
             _environment = previousEnv;
         }
     }
+
+    public object VisitIf_Stmt(Stmt.If_Stmt if_)
+    {
+        if(IsTruthy(Evaluate(if_.condition))){
+            Execute(if_.thenBranch);
+        } else if(if_.elseBranch != null){
+            Execute(if_.elseBranch);
+        }
+        return null;
+    }
 }

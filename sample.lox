@@ -1,5 +1,6 @@
-var a = 1;
-{
-  var a = a + 2;
-  print a;
-}
+if ("hi") {
+  print "yess";
+} else if (nil) {
+        print "double trouble";
+    }
+print "nothing happened";
