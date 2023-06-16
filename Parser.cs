@@ -1,27 +1,8 @@
-using System.Runtime.Serialization;
-
 namespace Lox;
 
 class Parser
 {
-    private class ParseError : Exception
-    {
-        // public ParseError()
-        // {
-        // }
-        //
-        // public ParseError(string? message) : base(message)
-        // {
-        // }
-        //
-        // public ParseError(string? message, Exception? innerException) : base(message, innerException)
-        // {
-        // }
-        //
-        // protected ParseError(SerializationInfo info, StreamingContext context) : base(info, context)
-        // {
-        // }
-    }
+    private class ParseError : Exception { }
     private readonly Token[] _tokens;
     private int _current = 0;
 
@@ -77,7 +58,36 @@ class Parser
         {
             return WhileStatement();
         }
+        if (Match(TokenType.FOR))
+        {
+            return ForStatement();
+        }
         return ExpressionStatement();
+    }
+
+    private Stmt ForStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+        Stmt initializer = Declaration();
+        Expr condition = Expression();
+        Consume(TokenType.SEMICOLON, "Expect ';' in 'for' after condition.");
+        Stmt increment = new Stmt.ExpressionStmt(Expression());
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' at the end of 'for'.");
+
+        //Desugaring for statements into while statements
+        Stmt body = Statement();
+        Stmt whileBody;
+        if (body is Stmt.BlockStmt blockBody)
+        {
+            blockBody.statements.Add(increment);
+            whileBody = blockBody;
+        }
+        else
+        {
+            whileBody = new Stmt.BlockStmt(new List<Stmt>() { body, increment });
+        }
+        Stmt whileStmt = new Stmt.While_Stmt(condition, whileBody);
+        return new Stmt.BlockStmt(new List<Stmt>() { initializer, whileStmt });
     }
 
     private Stmt WhileStatement()
@@ -98,7 +108,8 @@ class Parser
         Consume(TokenType.RIGHT_PAREN, "Expect ')' after 'if' condition.");
         Stmt thenBranch = Statement();
         Stmt elseBranch = null;
-        if (Match(TokenType.ELSE)){
+        if (Match(TokenType.ELSE))
+        {
             elseBranch = Statement();
         }
         return new Stmt.If_Stmt(condition, thenBranch, elseBranch);
@@ -159,7 +170,8 @@ class Parser
     private Expr Or()
     {
         Expr expr = And();
-        while (Match (TokenType.OR)){
+        while (Match(TokenType.OR))
+        {
             Token token = Previous();
             Expr right = And();
             expr = new Expr.LogicalExpr(expr, token, right);
@@ -170,7 +182,8 @@ class Parser
     private Expr And()
     {
         Expr expr = Equality();
-        while (Match (TokenType.AND)){
+        while (Match(TokenType.AND))
+        {
             Token token = Previous();
             Expr right = Equality();
             expr = new Expr.LogicalExpr(expr, token, right);
