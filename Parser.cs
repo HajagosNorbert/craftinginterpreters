@@ -73,7 +73,22 @@ class Parser
         {
             return IfStatement();
         }
+        if (Match(TokenType.WHILE))
+        {
+            return WhileStatement();
+        }
         return ExpressionStatement();
+    }
+
+    private Stmt WhileStatement()
+    {
+
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+        Expr condition = Expression();
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after 'while' condition.");
+        Stmt body = Statement();
+        return new Stmt.While_Stmt(condition, body);
+
     }
 
     private Stmt IfStatement()

@@ -1,5 +1,5 @@
-if (false or false) {
-  print "yess";
-} else if (nil) {
-        print "double trouble";
+var a = 3;
+while (a < 10){
+ print a;
+ a = a + 1;
 }

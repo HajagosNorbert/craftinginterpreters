@@ -56,9 +56,12 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
                 {
                     return leftStr + rightStr;
                 }
-                else if (left is string str)
+                else if (left is string onlyLeftStr)
                 {
-                    return str + Stringify(right);
+                    return onlyLeftStr + Stringify(right);
+                } 
+                else if (right is string onlyRightStr){
+                    return Stringify(left) + onlyRightStr;
                 }
                 else if (left is Double leftDouble && right is Double rightDouble)
                 {
@@ -223,5 +226,13 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         }
         return Evaluate(logical.right);
         
+    }
+
+    public object VisitWhile_Stmt(Stmt.While_Stmt while_)
+    {
+        while(IsTruthy(Evaluate(while_.condition))){
+            Execute(while_.body);
+        }
+        return null;
     }
 }

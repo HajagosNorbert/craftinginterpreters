@@ -7,6 +7,7 @@ public abstract T Accept<T>(Visitor<T> visitor);
 public interface Visitor<T> {
       public T VisitBlockStmt(BlockStmt block);
       public T VisitIf_Stmt(If_Stmt if_);
+      public T VisitWhile_Stmt(While_Stmt while_);
       public T VisitExpressionStmt(ExpressionStmt expression);
       public T VisitPrintStmt(PrintStmt print);
       public T VisitVarStmt(VarStmt var);
@@ -32,6 +33,17 @@ public interface Visitor<T> {
       }
       public override T Accept<T>(Visitor<T> visitor) {
           return visitor.VisitIf_Stmt(this);
+      }
+  }
+  public class While_Stmt: Stmt{
+      public readonly Expr condition;
+      public readonly Stmt body;
+      public While_Stmt(Expr condition, Stmt body) {
+          this.condition = condition;
+          this.body = body;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitWhile_Stmt(this);
       }
   }
   public class ExpressionStmt: Stmt{
