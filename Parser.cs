@@ -73,9 +73,9 @@ class Parser
         Consume(TokenType.SEMICOLON, "Expect ';' in 'for' after condition.");
         Stmt increment = new Stmt.ExpressionStmt(Expression());
         Consume(TokenType.RIGHT_PAREN, "Expect ')' at the end of 'for'.");
+        Stmt body = Statement();
 
         //Desugaring for statements into while statements
-        Stmt body = Statement();
         Stmt whileBody;
         if (body is Stmt.BlockStmt blockBody)
         {
@@ -267,10 +267,41 @@ class Parser
         if (Match(TokenType.MINUS, TokenType.BANG))
         {
             Token token = Previous();
-            Expr right = Unary();
+            Expr right = Call();
             return new Expr.UnaryExpr(token, right);
         }
-        return Primary();
+        return Call();
+    }
+
+    private Expr Call()
+    {
+        Expr expr = Primary();
+        while (true)
+        {
+            if (Match(TokenType.LEFT_PAREN))
+            {
+                 expr = FinishCall(expr);
+            }
+            else break;
+
+        }
+        return expr;
+    }
+
+    private Expr FinishCall(Expr callee)
+    {
+        List<Expr> args = new();
+        if(!Check(TokenType.RIGHT_PAREN)){
+            do {
+                if(args.Count() >= 255){
+                    Error(Previous(), "Maximum of 255 parameters exceeded");
+                }
+                args.Add(Expression());
+            } while(Match(TokenType.COMMA));
+        }
+        Consume(TokenType.RIGHT_PAREN, "Exprect ')' at the end of function call.");
+
+        return new Expr.CallExpr(callee, Previous(), args);
     }
 
 

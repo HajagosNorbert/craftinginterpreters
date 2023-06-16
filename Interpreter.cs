@@ -2,7 +2,8 @@ namespace Lox;
 
 class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 {
-    private LoxEnvironment _environment = new LoxEnvironment();
+    readonly LoxEnvironment _globals = new LoxEnvironment();
+    private LoxEnvironment _environment = _globals;
     public void Interpret(List<Stmt> statements)
     {
         try

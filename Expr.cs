@@ -11,6 +11,7 @@ public interface Visitor<T> {
       public T VisitLogicalExpr(LogicalExpr logical);
       public T VisitLiteralExpr(LiteralExpr literal);
       public T VisitUnaryExpr(UnaryExpr unary);
+      public T VisitCallExpr(CallExpr call);
       public T VisitVariableExpr(VariableExpr variable);
 }
 
@@ -78,6 +79,19 @@ public interface Visitor<T> {
       }
       public override T Accept<T>(Visitor<T> visitor) {
           return visitor.VisitUnaryExpr(this);
+      }
+  }
+  public class CallExpr: Expr{
+      public readonly Expr callee;
+      public readonly Token paren;
+      public readonly List<Expr> args;
+      public CallExpr(Expr callee, Token paren, List<Expr> args) {
+          this.callee = callee;
+          this.paren = paren;
+          this.args = args;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitCallExpr(this);
       }
   }
   public class VariableExpr: Expr{
