@@ -18,6 +18,10 @@ class Parser
             {
                 return varDecl();
             }
+            if (Match(TokenType.FUN))
+            {
+                return Function("function");
+            }
             return Statement();
         }
         catch (ParseError e)
@@ -26,6 +30,34 @@ class Parser
             return null;
         }
     }
+
+    private Stmt Function(string kind)
+    {
+        var name = Consume(TokenType.IDENTIFIER, "Expect function name.");
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after " + kind + " identifier.");
+        List<Token> parameters = Parameters();
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after " + kind + " parameters.");
+        Consume(TokenType.LEFT_BRACE, "Expect '{' after " + kind + " parameters.");
+        List<Stmt> bodySatements = Block();
+
+        return new Stmt.FunctionStmt(name, parameters, bodySatements);
+    }
+
+    private List<Token> Parameters()
+    {
+        List<Token> parameters = new();
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            do {
+                if(parameters.Count() >= 255){
+                    Error(Previous(), "Maximum of 255 parameters exceeded");
+                }
+                parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+            } while (Match(TokenType.COMMA));
+        }
+        return parameters;
+    }
+
     // varDecl -> "var" IDENTIFIER ( "=" expression)?;
     private Stmt varDecl()
     {
@@ -62,7 +94,22 @@ class Parser
         {
             return ForStatement();
         }
+        if (Match(TokenType.RETURN))
+        {
+            return ReturnStatement();
+        }
         return ExpressionStatement();
+    }
+
+    private Stmt ReturnStatement()
+    {
+        Token returnKeyword = Previous();
+        Expr expr = null;
+        if(!Check(TokenType.SEMICOLON)){
+            expr = Expression();
+        }
+        Consume(TokenType.SEMICOLON, "Expect ';' at the end of return statement.");
+        return new Stmt.Return_Stmt(returnKeyword,expr);
     }
 
     private Stmt ForStatement()
@@ -280,7 +327,7 @@ class Parser
         {
             if (Match(TokenType.LEFT_PAREN))
             {
-                 expr = FinishCall(expr);
+                expr = FinishCall(expr);
             }
             else break;
 
@@ -291,13 +338,16 @@ class Parser
     private Expr FinishCall(Expr callee)
     {
         List<Expr> args = new();
-        if(!Check(TokenType.RIGHT_PAREN)){
-            do {
-                if(args.Count() >= 255){
-                    Error(Previous(), "Maximum of 255 parameters exceeded");
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            do
+            {
+                if (args.Count() >= 255)
+                {
+                    Error(Previous(), "Maximum of 255 arguments exceeded");
                 }
                 args.Add(Expression());
-            } while(Match(TokenType.COMMA));
+            } while (Match(TokenType.COMMA));
         }
         Consume(TokenType.RIGHT_PAREN, "Exprect ')' at the end of function call.");
 

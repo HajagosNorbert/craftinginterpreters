@@ -2,8 +2,14 @@ namespace Lox;
 
 class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 {
-    readonly LoxEnvironment _globals = new LoxEnvironment();
-    private LoxEnvironment _environment = _globals;
+    public LoxEnvironment Globals { get; init; } = new LoxEnvironment();
+    private LoxEnvironment _environment;
+
+    public Interpreter()
+    {
+        Globals.Define("clock", new LoxClock());
+        _environment = Globals;
+    }
     public void Interpret(List<Stmt> statements)
     {
         try
@@ -60,8 +66,9 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
                 else if (left is string onlyLeftStr)
                 {
                     return onlyLeftStr + Stringify(right);
-                } 
-                else if (right is string onlyRightStr){
+                }
+                else if (right is string onlyRightStr)
+                {
                     return Stringify(left) + onlyRightStr;
                 }
                 else if (left is Double leftDouble && right is Double rightDouble)
@@ -191,7 +198,7 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         return null;
     }
 
-    private void ExecuteBlock(List<Stmt> statements, LoxEnvironment newEnvironment)
+    public void ExecuteBlock(List<Stmt> statements, LoxEnvironment newEnvironment)
     {
         LoxEnvironment previousEnv = _environment;
 
@@ -211,9 +218,12 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 
     public object VisitIf_Stmt(Stmt.If_Stmt if_)
     {
-        if(IsTruthy(Evaluate(if_.condition))){
+        if (IsTruthy(Evaluate(if_.condition)))
+        {
             Execute(if_.thenBranch);
-        } else if(if_.elseBranch != null){
+        }
+        else if (if_.elseBranch != null)
+        {
             Execute(if_.elseBranch);
         }
         return null;
@@ -222,18 +232,52 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
     public object VisitLogicalExpr(Expr.LogicalExpr logical)
     {
         bool isLeftTruthy = IsTruthy(Evaluate(logical.left));
-        if(logical.operatr.Type == TokenType.AND && !isLeftTruthy || logical.operatr.Type == TokenType.OR && isLeftTruthy){
+        if (logical.operatr.Type == TokenType.AND && !isLeftTruthy || logical.operatr.Type == TokenType.OR && isLeftTruthy)
+        {
             return Evaluate(logical.left);
         }
         return Evaluate(logical.right);
-        
+
     }
 
     public object VisitWhile_Stmt(Stmt.While_Stmt while_)
     {
-        while(IsTruthy(Evaluate(while_.condition))){
+        while (IsTruthy(Evaluate(while_.condition)))
+        {
             Execute(while_.body);
         }
         return null;
+    }
+
+    public object VisitCallExpr(Expr.CallExpr call)
+    {
+
+        ILoxCallable callee;
+        try
+        {
+            callee = (ILoxCallable)Evaluate(call.callee);
+        }
+        catch (InvalidCastException e)
+        {
+            throw new RuntimeError(call.paren, "identifier is not callable.");
+        }
+        throw new RuntimeError(call.paren, "Expected " +
+                  callee.arity() + " arguments but got " +
+                  call.args.Count() + ".");
+        return callee.Call(this, call.args.Select(x => Evaluate(x)).ToList());
+    }
+
+    public object VisitFunctionStmt(Stmt.FunctionStmt functionStmt)
+    {
+        LoxFunction functionObj = new LoxFunction(functionStmt, _environment);
+        _environment.Define(functionStmt.name.Lexeme, functionObj);
+        return null;
+    }
+
+    public object VisitReturn_Stmt(Stmt.Return_Stmt return_)
+    {
+        object value = null;
+        if (return_.value != null) { value = Evaluate(return_.value); }
+        throw new Return(value);
     }
 }

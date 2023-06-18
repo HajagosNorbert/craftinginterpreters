@@ -17,7 +17,9 @@ class LoxEnvironment
 
     public void Define(string name, Object value)
     {
-        _values.Add(name, value);
+        if (!_values.TryAdd(name, value)){
+            _values[name] = value;
+        }
     }
 
     public Object Get(Token name)

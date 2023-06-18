@@ -57,5 +57,10 @@ class AstPrinter : Expr.Visitor<string>
     {
         return VisitBinaryExpr(new Expr.BinaryExpr(logical.left, logical.operatr, logical.right));
     }
+
+    public string VisitCallExpr(Expr.CallExpr call)
+    {
+        return parenthesize("call to " + print(call.callee), call.args.ToArray() );
+    }
 }
 
