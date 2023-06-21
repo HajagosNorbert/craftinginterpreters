@@ -1,5 +1,4 @@
 ﻿namespace Lox;
-//TODO: Implement the ternary operator
 public class Lox
 {
     static bool hadError = false;
@@ -12,7 +11,8 @@ public class Lox
         // run("(4/2)");
         // return 0;
 
-        args = args.Append("sample.lox").ToArray();
+        // args = args.Append("sample.lox").ToArray();
+
         if (args.Length > 1)
         {
             Console.WriteLine("Usage: shaprlox [script]");
@@ -56,8 +56,9 @@ public class Lox
         }
         catch (Exception e)
         {
-            Console.WriteLine("Error while reading file: '" + file + "'. This is a bug. Here is the error:\n");
-            Console.WriteLine(e.ToString());
+            Console.WriteLine("Error while reading file: '" + file + "'.");
+            // Console.WriteLine("Error while reading file: '" + file + "'. This is a bug. Here is the error:\n");
+            // Console.WriteLine(e.ToString());
         }
     }
 
@@ -67,6 +68,12 @@ public class Lox
         List<Token> tokens = scanner.ScanTokens();
         Parser parser = new Parser(tokens);
         List<Stmt> statements = parser.Parse();
+        if (hadError) return;
+
+        Resolver resolver = new(interpreter);
+        resolver.Resolve(statements);
+        if (hadError) return;
+
         interpreter.Interpret(statements);
     }
 

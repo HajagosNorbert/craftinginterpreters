@@ -22,6 +22,10 @@ class Parser
             {
                 return Function("function");
             }
+            if (Match(TokenType.CLASS))
+            {
+                return ClassDeclaration();
+            }
             return Statement();
         }
         catch (ParseError e)
@@ -31,7 +35,20 @@ class Parser
         }
     }
 
-    private Stmt Function(string kind)
+    private Stmt ClassDeclaration()
+    {
+        var name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+        Consume(TokenType.LEFT_BRACE, "Expect '{' after class name.");
+        List<Stmt.FunctionStmt> methods = new();
+        while(!Check(TokenType.RIGHT_BRACE) && !IsAtEnd()){
+            methods.Add(Function("method"));
+        }
+        Consume(TokenType.RIGHT_BRACE, "Expect '}' at the end of class definition.");
+
+        return new Stmt.Class_Stmt(name, methods);
+    }
+
+    private Stmt.FunctionStmt Function(string kind)
     {
         var name = Consume(TokenType.IDENTIFIER, "Expect function name.");
         Consume(TokenType.LEFT_PAREN, "Expect '(' after " + kind + " identifier.");

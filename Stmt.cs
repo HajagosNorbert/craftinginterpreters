@@ -8,6 +8,7 @@ public interface Visitor<T> {
       public T VisitBlockStmt(BlockStmt block);
       public T VisitIf_Stmt(If_Stmt if_);
       public T VisitWhile_Stmt(While_Stmt while_);
+      public T VisitClass_Stmt(Class_Stmt class_);
       public T VisitReturn_Stmt(Return_Stmt return_);
       public T VisitFunctionStmt(FunctionStmt function);
       public T VisitExpressionStmt(ExpressionStmt expression);
@@ -46,6 +47,17 @@ public interface Visitor<T> {
       }
       public override T Accept<T>(Visitor<T> visitor) {
           return visitor.VisitWhile_Stmt(this);
+      }
+  }
+  public class Class_Stmt: Stmt{
+      public readonly Token name;
+      public readonly List<Stmt.FunctionStmt> methods;
+      public Class_Stmt(Token name, List<Stmt.FunctionStmt> methods) {
+          this.name = name;
+          this.methods = methods;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitClass_Stmt(this);
       }
   }
   public class Return_Stmt: Stmt{

@@ -1,14 +1,30 @@
-fun makeCounter(a) {
-    var a = 2;
-  var i = 0;
-  fun count() {
-    i = i + 1;
-    print i;
-  }
+// fun makeCounter(start) {
+//   var i = start;
+//   fun count() {
+//     var tmp = i;
+//     i = i + 1;
+//     return tmp;
+//   }
+//   return count;
+// }
+// 
+// fun fib(n){
+//     if(n <= 1) return n;
+//     return fib(n-1) + fib(n-2);
+// }
+// 
+// var counter = makeCounter(0);
+// var count;
+// for (var i = 0; i < 14; i = i+1){
+//     count = counter();
+//     print "calculationg fibonacchi number: " + (count + 1);
+//     print fib(count);
+// }
 
-  return count;
+class DevonshireCream {
+  serveOn() {
+    return "Scones";
+  }
 }
 
-var counter = makeCounter();
-counter(); // "1".
-counter(); // "2".
+print DevonshireCream;

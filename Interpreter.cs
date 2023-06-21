@@ -3,6 +3,8 @@ namespace Lox;
 class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 {
     public LoxEnvironment Globals { get; init; } = new LoxEnvironment();
+    public Dictionary<Expr, int> locals { get; init; } = new();
+
     private LoxEnvironment _environment;
 
     public Interpreter()
@@ -183,12 +185,37 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 
     public object VisitVariableExpr(Expr.VariableExpr variable)
     {
-        return _environment.Get(variable.name);
+        return LookUpVariable(variable.name, variable);
     }
 
+    private object LookUpVariable(Token name, Expr.VariableExpr variable)
+    {
+        if (locals.TryGetValue(variable, out int dist))
+        {
+            var currEnv = _environment;
+            for (int i = 0; i < dist; ++i)
+            {
+                currEnv = currEnv.Enclosing;
+            }
+            return currEnv.Get(name);
+        }
+        else
+        {
+            return Globals.Get(name);
+        }
+    }
     public object VisitAssignExpr(Expr.AssignExpr assign)
     {
-        _environment.Assign(assign.name, Evaluate(assign.value));
+        var value = Evaluate(assign.value);
+        if(locals.TryGetValue(assign, out int dist)){
+            var currEnv = _environment;
+            for(int i = 0; i < dist; ++i){
+                currEnv = currEnv.Enclosing;
+            }
+            currEnv.Assign(assign.name, value);
+        } else {
+            Globals.Assign(assign.name, value);
+        }
         return assign.value;
     }
 
@@ -261,9 +288,12 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         {
             throw new RuntimeError(call.paren, "identifier is not callable.");
         }
-        throw new RuntimeError(call.paren, "Expected " +
-                  callee.arity() + " arguments but got " +
-                  call.args.Count() + ".");
+        if (callee.arity() != call.args.Count())
+        {
+            throw new RuntimeError(call.paren, "Expected " +
+                    callee.arity() + " arguments but got " +
+                    call.args.Count() + ".");
+        }
         return callee.Call(this, call.args.Select(x => Evaluate(x)).ToList());
     }
 
@@ -279,5 +309,18 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         object value = null;
         if (return_.value != null) { value = Evaluate(return_.value); }
         throw new Return(value);
+    }
+
+    internal void Resolve(Expr expr, int depth)
+    {
+        locals[expr] = depth;
+    }
+
+    public object VisitClass_Stmt(Stmt.Class_Stmt class_)
+    {
+        _environment.Define(class_.name.Lexeme, null);
+        LoxClass klass = new(class_.name.Lexeme);
+        _environment.Assign(class_.name, klass);
+        return klass;
     }
 }
