@@ -303,7 +303,7 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 
     public object VisitFunctionStmt(Stmt.FunctionStmt functionStmt)
     {
-        LoxFunction functionObj = new LoxFunction(functionStmt, _environment);
+        LoxFunction functionObj = new LoxFunction(functionStmt, _environment, false);
         _environment.Define(functionStmt.name.Lexeme, functionObj);
         return null;
     }
@@ -324,9 +324,11 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
     {
         _environment.Define(class_.name.Lexeme, null);
         Dictionary<string, LoxFunction> methods = new();
-        foreach(var methodStmt in class_.methods){
-            LoxFunction method = new(methodStmt, _environment);
-            methods.Add(methodStmt.name.Lexeme, method);
+        foreach (var methodStmt in class_.methods)
+        {
+            var methodName = methodStmt.name.Lexeme;
+            LoxFunction method = new(methodStmt, _environment, methodName == "init");
+            methods.Add(methodName, method);
         }
 
         LoxClass klass = new(class_.name.Lexeme, methods);

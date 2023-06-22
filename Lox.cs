@@ -57,8 +57,8 @@ public class Lox
         catch (Exception e)
         {
             Console.WriteLine("Error while reading file: '" + file + "'.");
-            // Console.WriteLine("Error while reading file: '" + file + "'. This is a bug. Here is the error:\n");
-            // Console.WriteLine(e.ToString());
+            Console.WriteLine("Error while reading file: '" + file + "'. This is a bug. Here is the error:\n");
+            Console.WriteLine(e.ToString());
         }
     }
 

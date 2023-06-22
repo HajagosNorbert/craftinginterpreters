@@ -3,6 +3,7 @@ enum FunctionType
 {
     NONE,
     METHOD,
+    INITIALIZER,
     FUNCTION
 }
 
@@ -46,7 +47,15 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
         {
             Lox.Error(return_.keyword, "Can't return from top-level code.");
         }
-        if (return_ != null) Resolve(return_.value);
+        if (return_.value != null)
+        {
+            if (enclosingFunction == FunctionType.INITIALIZER)
+            {
+                Lox.Error(return_.keyword,
+                        "Can't return a value from an initializer.");
+            }
+            Resolve(return_.value);
+        }
         return null;
     }
 
@@ -215,7 +224,7 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
     {
         for (int i = Scopes.Count() - 1; i >= 0; --i)
         {
-            if (Scopes.ElementAt(Scopes.Count() - i -1).ContainsKey(name.Lexeme))
+            if (Scopes.ElementAt(Scopes.Count() - i - 1).ContainsKey(name.Lexeme))
             {
                 Interpreter.Resolve(expr, Scopes.Count() - i - 1);
                 return;
@@ -233,6 +242,11 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
         foreach (var method in stmt.methods)
         {
             FunctionType declaration = FunctionType.METHOD;
+            if (method.name.Lexeme == "init")
+            {
+                declaration = FunctionType.INITIALIZER;
+            }
+
             ResolveFunction(method, declaration);
         }
         EndScope();

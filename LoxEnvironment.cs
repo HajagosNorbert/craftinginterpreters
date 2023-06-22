@@ -22,6 +22,20 @@ class LoxEnvironment
         }
     }
 
+    public object GetAt(int distance, string name){
+        return Ancestor(distance)._values[name];
+    }
+
+    private LoxEnvironment Ancestor(int distance)
+    {
+        var currEnv = this;
+        for (int i = 0; i < distance; ++i)
+        {
+            currEnv = currEnv.Enclosing;
+        }
+        return currEnv;
+    }
+
     public Object Get(Token name)
     {
         if (_values.ContainsKey(name.Lexeme))

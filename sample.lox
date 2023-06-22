@@ -23,25 +23,17 @@
 
 
 class Thing {
-  getCallback() {
-    fun localFunction() {
-      print this;
-    }
-
-    return localFunction;
+  init(a){
+    this.a = a;
   }
+ getCallback() {
+   fun localFunction() {
+     print this.a;
+   }
+
+   return localFunction;
+ }
 }
 
-var callback = Thing().getCallback();
+var callback = Thing("fa").getCallback();
 callback();
-
-// fun makeCounter(start) {
-//   var i = start;
-//   fun count() {
-//     var tmp = i;
-//     return tmp;
-//   }
-//   return count;
-// }
-// 
-// makeCounter(0)();
