@@ -4,16 +4,25 @@ class LoxClass : ILoxCallable
 {
     public String Name { get; init; }
     public Dictionary<string, LoxFunction> Methods { get; init; }
+    public LoxClass Superclass { get; init; }
 
-    public LoxClass(String name, Dictionary<string, LoxFunction> methods)
+    public LoxClass(String name, LoxClass superclass, Dictionary<string, LoxFunction> methods)
     {
         this.Name = name;
+        Superclass = superclass;
         this.Methods = methods;
     }
 
     public LoxFunction FindMethod(string name)
     {
-        return Methods.GetValueOrDefault(name, null);
+        if(Methods.TryGetValue(name, out var ownMethod)){
+            return ownMethod;
+        }
+
+        if(Superclass != null){
+            return Superclass.FindMethod(name);
+        }
+        return null;
     }
 
     override public String ToString()

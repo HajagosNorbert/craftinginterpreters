@@ -320,19 +320,31 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         locals[expr] = depth;
     }
 
-    public object VisitClass_Stmt(Stmt.Class_Stmt class_)
+    public object VisitClass_Stmt(Stmt.Class_Stmt stmt)
     {
-        _environment.Define(class_.name.Lexeme, null);
+        LoxClass superClass = null;
+        if (stmt.superclass != null)
+        {
+            try
+            {
+                superClass = (LoxClass)Evaluate(stmt.superclass);
+            }
+            catch (InvalidCastException e)
+            {
+                throw new RuntimeError(stmt.superclass.name, "Superclass must be a class.");
+            }
+        }
+        _environment.Define(stmt.name.Lexeme, null);
         Dictionary<string, LoxFunction> methods = new();
-        foreach (var methodStmt in class_.methods)
+        foreach (var methodStmt in stmt.methods)
         {
             var methodName = methodStmt.name.Lexeme;
             LoxFunction method = new(methodStmt, _environment, methodName == "init");
             methods.Add(methodName, method);
         }
 
-        LoxClass klass = new(class_.name.Lexeme, methods);
-        _environment.Assign(class_.name, klass);
+        LoxClass klass = new(stmt.name.Lexeme, superClass, methods);
+        _environment.Assign(stmt.name, klass);
         return klass;
     }
 

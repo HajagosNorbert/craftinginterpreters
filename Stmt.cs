@@ -51,9 +51,11 @@ public interface Visitor<T> {
   }
   public class Class_Stmt: Stmt{
       public readonly Token name;
+      public readonly Expr.VariableExpr superclass;
       public readonly List<Stmt.FunctionStmt> methods;
-      public Class_Stmt(Token name, List<Stmt.FunctionStmt> methods) {
+      public Class_Stmt(Token name, Expr.VariableExpr superclass, List<Stmt.FunctionStmt> methods) {
           this.name = name;
+          this.superclass = superclass;
           this.methods = methods;
       }
       public override T Accept<T>(Visitor<T> visitor) {

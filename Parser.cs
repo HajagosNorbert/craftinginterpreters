@@ -38,6 +38,12 @@ class Parser
     private Stmt ClassDeclaration()
     {
         var name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+
+        Expr.VariableExpr superclass = null;
+        if (Match(TokenType.LESS)){
+            Token superclassName = Consume(TokenType.IDENTIFIER, "Expect identifier for superclass after '<'.");
+            superclass = new Expr.VariableExpr(superclassName);
+        }
         Consume(TokenType.LEFT_BRACE, "Expect '{' after class name.");
         List<Stmt.FunctionStmt> methods = new();
         while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
@@ -46,7 +52,7 @@ class Parser
         }
         Consume(TokenType.RIGHT_BRACE, "Expect '}' at the end of class definition.");
 
-        return new Stmt.Class_Stmt(name, methods);
+        return new Stmt.Class_Stmt(name, superclass, methods);
     }
 
     private Stmt.FunctionStmt Function(string kind)

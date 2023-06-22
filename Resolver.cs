@@ -236,6 +236,12 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
     {
         Declare(stmt.name);
         Define(stmt.name);
+        if (stmt.superclass != null){
+            if(stmt.superclass.name.Lexeme == stmt.name.Lexeme){
+                Lox.Error(stmt.superclass.name, "A class can't inherit from itself.");
+            }
+            Resolve(stmt.superclass);
+        }
 
         BeginScope();
         Scopes.Peek().Add("this", true);

@@ -22,18 +22,12 @@
 // }
 
 
-class Thing {
-  init(a){
-    this.a = a;
+class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
   }
- getCallback() {
-   fun localFunction() {
-     print this.a;
-   }
-
-   return localFunction;
- }
 }
 
-var callback = Thing("fa").getCallback();
-callback();
+class BostonCream < Doughnut {}
+
+BostonCream().cook();

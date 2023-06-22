@@ -1,4 +1,7 @@
-﻿namespace Lox;
+﻿// todo: chapter 12 challenge 1:
+// We have methods on instances, but there is no way to define “static” methods that can be called directly on the class object itself. Add support for them. Use a class keyword preceding the method to indicate a static method that hangs off the class object.
+// You can solve this however you like, but the “metaclasses” https://en.wikipedia.org/wiki/Metaclass used by Smalltalk and Ruby are a particularly elegant approach. Hint: Make LoxClass extend LoxInstance and go from there.
+namespace Lox;
 public class Lox
 {
     static bool hadError = false;
