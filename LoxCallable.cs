@@ -48,4 +48,10 @@ class LoxFunction : ILoxCallable
         return "<fn " + _declaration.name.Lexeme + ">";
     }
 
+    internal object bind(LoxInstance loxInstance)
+    {
+        LoxEnvironment env = new(_closure);
+        env.Define("this", loxInstance);
+        return new LoxFunction(this._declaration, env);
+    }
 }

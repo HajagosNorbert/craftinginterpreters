@@ -1,6 +1,8 @@
 namespace Lox;
-enum FunctionType {
+enum FunctionType
+{
     NONE,
+    METHOD,
     FUNCTION
 }
 
@@ -8,7 +10,7 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 {
     public Interpreter Interpreter { get; init; }
     private Stack<Dictionary<string, bool>> Scopes { get; } = new();
-     private FunctionType enclosingFunction = FunctionType.NONE;
+    private FunctionType enclosingFunction = FunctionType.NONE;
 
     public Resolver(Interpreter interpreter)
     {
@@ -40,7 +42,8 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     public object? VisitReturn_Stmt(Stmt.Return_Stmt return_)
     {
-        if (enclosingFunction == FunctionType.NONE){
+        if (enclosingFunction == FunctionType.NONE)
+        {
             Lox.Error(return_.keyword, "Can't return from top-level code.");
         }
         if (return_ != null) Resolve(return_.value);
@@ -74,7 +77,7 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     public object? VisitExpressionStmt(Stmt.ExpressionStmt expression)
     {
-        Resolve(expression);
+        Resolve(expression.expression);
         return null;
     }
 
@@ -101,7 +104,8 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
         {
             return;
         }
-        if(Scopes.Peek().ContainsKey(name.Lexeme)){
+        if (Scopes.Peek().ContainsKey(name.Lexeme))
+        {
             Lox.Error(name, "Already a variable with this name in this scope.");
         }
         Scopes.Peek().Add(name.Lexeme, false);
@@ -205,11 +209,13 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
         Scopes.Pop();
     }
 
+    // 3 elem
+    // i = 2; 
     private void ResolveLocal(Expr expr, Token name)
     {
         for (int i = Scopes.Count() - 1; i >= 0; --i)
         {
-            if (Scopes.ElementAt(i).ContainsKey(name.Lexeme))
+            if (Scopes.ElementAt(Scopes.Count() - i -1).ContainsKey(name.Lexeme))
             {
                 Interpreter.Resolve(expr, Scopes.Count() - i - 1);
                 return;
@@ -217,15 +223,38 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
         }
     }
 
-    public object? VisitClass_Stmt(Stmt.Class_Stmt class_)
+    public object? VisitClass_Stmt(Stmt.Class_Stmt stmt)
     {
-        Declare(class_.name);
-        Define(class_.name);
+        Declare(stmt.name);
+        Define(stmt.name);
 
-        // BeginScope();
-        // 
-        //
-        // EndScope();
+        BeginScope();
+        Scopes.Peek().Add("this", true);
+        foreach (var method in stmt.methods)
+        {
+            FunctionType declaration = FunctionType.METHOD;
+            ResolveFunction(method, declaration);
+        }
+        EndScope();
+        return null;
+    }
+
+    public object? VisitGet_Expr(Expr.Get_Expr get_)
+    {
+        Resolve(get_.object_);
+        return null;
+    }
+
+    public object? VisitSet_Expr(Expr.Set_Expr expr)
+    {
+        Resolve(expr.value);
+        Resolve(expr.object_);
+        return null;
+    }
+
+    public object? VisitThis_Expr(Expr.This_Expr expr)
+    {
+        ResolveLocal(expr, expr.keyword);
         return null;
     }
 }

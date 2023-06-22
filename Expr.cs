@@ -10,7 +10,10 @@ public interface Visitor<T> {
       public T VisitGroupingExpr(GroupingExpr grouping);
       public T VisitLogicalExpr(LogicalExpr logical);
       public T VisitLiteralExpr(LiteralExpr literal);
+      public T VisitSet_Expr(Set_Expr set_);
+      public T VisitThis_Expr(This_Expr this_);
       public T VisitUnaryExpr(UnaryExpr unary);
+      public T VisitGet_Expr(Get_Expr get_);
       public T VisitCallExpr(CallExpr call);
       public T VisitVariableExpr(VariableExpr variable);
 }
@@ -70,6 +73,28 @@ public interface Visitor<T> {
           return visitor.VisitLiteralExpr(this);
       }
   }
+  public class Set_Expr: Expr{
+      public readonly Expr object_;
+      public readonly Token name;
+      public readonly Expr value;
+      public Set_Expr(Expr object_, Token name, Expr value) {
+          this.object_ = object_;
+          this.name = name;
+          this.value = value;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitSet_Expr(this);
+      }
+  }
+  public class This_Expr: Expr{
+      public readonly Token keyword;
+      public This_Expr(Token keyword) {
+          this.keyword = keyword;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitThis_Expr(this);
+      }
+  }
   public class UnaryExpr: Expr{
       public readonly Token operatr;
       public readonly Expr right;
@@ -79,6 +104,17 @@ public interface Visitor<T> {
       }
       public override T Accept<T>(Visitor<T> visitor) {
           return visitor.VisitUnaryExpr(this);
+      }
+  }
+  public class Get_Expr: Expr{
+      public readonly Expr object_;
+      public readonly Token name;
+      public Get_Expr(Expr object_, Token name) {
+          this.object_ = object_;
+          this.name = name;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitGet_Expr(this);
       }
   }
   public class CallExpr: Expr{

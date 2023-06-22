@@ -3,7 +3,7 @@ public class Lox
 {
     static bool hadError = false;
     static bool hadRuntimeError = false;
-    static readonly AstPrinter astPrinter = new AstPrinter();
+    // static readonly AstPrinter astPrinter = new AstPrinter();
     static readonly Interpreter interpreter = new Interpreter();
 
     private static int Main(string[] args)
@@ -11,7 +11,7 @@ public class Lox
         // run("(4/2)");
         // return 0;
 
-        // args = args.Append("sample.lox").ToArray();
+        args = args.Append("sample.lox").ToArray();
 
         if (args.Length > 1)
         {

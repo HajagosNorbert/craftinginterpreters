@@ -40,7 +40,8 @@ class Parser
         var name = Consume(TokenType.IDENTIFIER, "Expect class name.");
         Consume(TokenType.LEFT_BRACE, "Expect '{' after class name.");
         List<Stmt.FunctionStmt> methods = new();
-        while(!Check(TokenType.RIGHT_BRACE) && !IsAtEnd()){
+        while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+        {
             methods.Add(Function("method"));
         }
         Consume(TokenType.RIGHT_BRACE, "Expect '}' at the end of class definition.");
@@ -65,8 +66,10 @@ class Parser
         List<Token> parameters = new();
         if (!Check(TokenType.RIGHT_PAREN))
         {
-            do {
-                if(parameters.Count() >= 255){
+            do
+            {
+                if (parameters.Count() >= 255)
+                {
                     Error(Previous(), "Maximum of 255 parameters exceeded");
                 }
                 parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
@@ -122,11 +125,12 @@ class Parser
     {
         Token returnKeyword = Previous();
         Expr expr = null;
-        if(!Check(TokenType.SEMICOLON)){
+        if (!Check(TokenType.SEMICOLON))
+        {
             expr = Expression();
         }
         Consume(TokenType.SEMICOLON, "Expect ';' at the end of return statement.");
-        return new Stmt.Return_Stmt(returnKeyword,expr);
+        return new Stmt.Return_Stmt(returnKeyword, expr);
     }
 
     private Stmt ForStatement()
@@ -209,24 +213,23 @@ class Parser
         return Assignment();
     }
 
-    /*
-     * Assign -> IDENTIFIER "=" Assign | Eq
-     * My approach is different.
-     */
     private Expr Assignment()
     {
         Expr expr = Or();
 
         if (Match(TokenType.EQUAL))
         {
+            Token equals = Previous();
+            Expr value = Assignment();
             if (expr is Expr.VariableExpr varExpr)
             {
-                return new Expr.AssignExpr(varExpr.name, Assignment());
+                return new Expr.AssignExpr(varExpr.name, value);
             }
-            else
+            else if (expr is Expr.Get_Expr getExpr)
             {
-                throw Error(Previous(), "Invalid assignment target.");
+                return new Expr.Set_Expr(getExpr.object_, getExpr.name, value);
             }
+            throw Error(equals, "Invalid assignment target.");
         }
         return expr;
     }
@@ -323,9 +326,6 @@ class Parser
         return expr;
     }
 
-    /*
-     *( "!" | "-" ) unary | primary
-     */
     private Expr Unary()
     {
         if (Match(TokenType.MINUS, TokenType.BANG))
@@ -345,6 +345,11 @@ class Parser
             if (Match(TokenType.LEFT_PAREN))
             {
                 expr = FinishCall(expr);
+            }
+            else if (Match(TokenType.DOT))
+            {
+                Token name = Consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+                expr = new Expr.Get_Expr(expr, name);
             }
             else break;
 
@@ -380,6 +385,7 @@ class Parser
         if (Match(TokenType.FALSE)) return new Expr.LiteralExpr(false);
         if (Match(TokenType.TRUE)) return new Expr.LiteralExpr(true);
         if (Match(TokenType.NIL)) return new Expr.LiteralExpr(null);
+        if (Match(TokenType.THIS)) return new Expr.This_Expr(Previous());
 
         if (Match(TokenType.NUMBER, TokenType.STRING))
         {

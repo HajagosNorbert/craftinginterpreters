@@ -188,7 +188,7 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         return LookUpVariable(variable.name, variable);
     }
 
-    private object LookUpVariable(Token name, Expr.VariableExpr variable)
+    private object LookUpVariable(Token name, Expr variable)
     {
         if (locals.TryGetValue(variable, out int dist))
         {
@@ -207,13 +207,17 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
     public object VisitAssignExpr(Expr.AssignExpr assign)
     {
         var value = Evaluate(assign.value);
-        if(locals.TryGetValue(assign, out int dist)){
+        if (locals.TryGetValue(assign, out int dist))
+        {
             var currEnv = _environment;
-            for(int i = 0; i < dist; ++i){
+            for (int i = 0; i < dist; ++i)
+            {
                 currEnv = currEnv.Enclosing;
             }
             currEnv.Assign(assign.name, value);
-        } else {
+        }
+        else
+        {
             Globals.Assign(assign.name, value);
         }
         return assign.value;
@@ -319,8 +323,42 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
     public object VisitClass_Stmt(Stmt.Class_Stmt class_)
     {
         _environment.Define(class_.name.Lexeme, null);
-        LoxClass klass = new(class_.name.Lexeme);
+        Dictionary<string, LoxFunction> methods = new();
+        foreach(var methodStmt in class_.methods){
+            LoxFunction method = new(methodStmt, _environment);
+            methods.Add(methodStmt.name.Lexeme, method);
+        }
+
+        LoxClass klass = new(class_.name.Lexeme, methods);
         _environment.Assign(class_.name, klass);
         return klass;
+    }
+
+    public object VisitGet_Expr(Expr.Get_Expr expr)
+    {
+        object obj = Evaluate(expr.object_);
+        if (obj is LoxInstance loxInstance)
+        {
+            return loxInstance.Get(expr.name);
+        }
+        throw new RuntimeError(expr.name, "Only instances have properties.");
+    }
+
+    public object VisitSet_Expr(Expr.Set_Expr expr)
+    {
+        object obj = Evaluate(expr.object_);
+
+        if (obj is LoxInstance loxInstance)
+        {
+            object value = Evaluate(expr.value);
+            loxInstance.Set(expr.name, value);
+            return value;
+        }
+        throw new RuntimeError(expr.name, "Only instances have fields.");
+    }
+
+    public object VisitThis_Expr(Expr.This_Expr expr)
+    {
+        return LookUpVariable(expr.keyword, expr);
     }
 }
