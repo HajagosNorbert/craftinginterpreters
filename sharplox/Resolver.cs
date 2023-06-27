@@ -6,12 +6,19 @@ enum FunctionType
     INITIALIZER,
     FUNCTION
 }
+enum ClassType
+{
+    NONE,
+    SUBCLASS,
+    CLASS
+}
 
 class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 {
     public Interpreter Interpreter { get; init; }
-    private Stack<Dictionary<string, bool>> Scopes { get; } = new();
-    private FunctionType enclosingFunction = FunctionType.NONE;
+    private readonly Stack<Dictionary<string, bool>> _scopes = new();
+    private FunctionType _enclosingFunction = FunctionType.NONE;
+    private ClassType _currentClass = ClassType.NONE;
 
     public Resolver(Interpreter interpreter)
     {
@@ -43,13 +50,13 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     public object? VisitReturn_Stmt(Stmt.Return_Stmt return_)
     {
-        if (enclosingFunction == FunctionType.NONE)
+        if (_enclosingFunction == FunctionType.NONE)
         {
             Lox.Error(return_.keyword, "Can't return from top-level code.");
         }
         if (return_.value != null)
         {
-            if (enclosingFunction == FunctionType.INITIALIZER)
+            if (_enclosingFunction == FunctionType.INITIALIZER)
             {
                 Lox.Error(return_.keyword,
                         "Can't return a value from an initializer.");
@@ -70,8 +77,8 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     private void ResolveFunction(Stmt.FunctionStmt function, FunctionType funcType)
     {
-        var prevFunctionType = enclosingFunction;
-        enclosingFunction = funcType;
+        var prevFunctionType = _enclosingFunction;
+        _enclosingFunction = funcType;
 
         BeginScope();
         foreach (var param in function.parameters)
@@ -81,7 +88,7 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
         }
         Resolve(function.body);
         EndScope();
-        enclosingFunction = prevFunctionType;
+        _enclosingFunction = prevFunctionType;
     }
 
     public object? VisitExpressionStmt(Stmt.ExpressionStmt expression)
@@ -109,24 +116,24 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     private void Declare(Token name)
     {
-        if (Scopes.Count() == 0)
+        if (_scopes.Count() == 0)
         {
             return;
         }
-        if (Scopes.Peek().ContainsKey(name.Lexeme))
+        if (_scopes.Peek().ContainsKey(name.Lexeme))
         {
             Lox.Error(name, "Already a variable with this name in this scope.");
         }
-        Scopes.Peek().Add(name.Lexeme, false);
+        _scopes.Peek().Add(name.Lexeme, false);
     }
 
     private void Define(Token name)
     {
-        if (Scopes.Count() == 0)
+        if (_scopes.Count() == 0)
         {
             return;
         }
-        Scopes.Peek()[name.Lexeme] = true;
+        _scopes.Peek()[name.Lexeme] = true;
     }
 
     public object? VisitAssignExpr(Expr.AssignExpr assign)
@@ -181,7 +188,7 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     public object? VisitVariableExpr(Expr.VariableExpr variable)
     {
-        if (Scopes.Count() != 0 && Scopes.Peek().GetValueOrDefault(variable.name.Lexeme, true) == false)
+        if (_scopes.Count() != 0 && _scopes.Peek().GetValueOrDefault(variable.name.Lexeme, true) == false)
         {
             Lox.Error(variable.name, "Can't read local variable in its own initializer.");
         }
@@ -210,23 +217,23 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     private void BeginScope()
     {
-        Scopes.Push(new());
+        _scopes.Push(new());
     }
 
     private void EndScope()
     {
-        Scopes.Pop();
+        _scopes.Pop();
     }
 
     // 3 elem
     // i = 2; 
     private void ResolveLocal(Expr expr, Token name)
     {
-        for (int i = Scopes.Count() - 1; i >= 0; --i)
+        for (int i = _scopes.Count() - 1; i >= 0; --i)
         {
-            if (Scopes.ElementAt(Scopes.Count() - i - 1).ContainsKey(name.Lexeme))
+            if (_scopes.ElementAt(_scopes.Count() - i - 1).ContainsKey(name.Lexeme))
             {
-                Interpreter.Resolve(expr, Scopes.Count() - i - 1);
+                Interpreter.Resolve(expr, _scopes.Count() - i - 1);
                 return;
             };
         }
@@ -234,17 +241,25 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     public object? VisitClass_Stmt(Stmt.Class_Stmt stmt)
     {
+        ClassType enclosingClass = _currentClass;
+        _currentClass = ClassType.CLASS;
+
         Declare(stmt.name);
         Define(stmt.name);
-        if (stmt.superclass != null){
-            if(stmt.superclass.name.Lexeme == stmt.name.Lexeme){
+        if (stmt.superclass != null)
+        {
+            _currentClass = ClassType.SUBCLASS;
+            if (stmt.superclass.name.Lexeme == stmt.name.Lexeme)
+            {
                 Lox.Error(stmt.superclass.name, "A class can't inherit from itself.");
             }
             Resolve(stmt.superclass);
+            BeginScope();
+            _scopes.Peek()["super"] = true;
         }
 
         BeginScope();
-        Scopes.Peek().Add("this", true);
+        _scopes.Peek().Add("this", true);
         foreach (var method in stmt.methods)
         {
             FunctionType declaration = FunctionType.METHOD;
@@ -256,6 +271,10 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
             ResolveFunction(method, declaration);
         }
         EndScope();
+
+        if (stmt.superclass != null) EndScope();
+
+        _currentClass = enclosingClass;
         return null;
     }
 
@@ -274,7 +293,27 @@ class Resolver : Expr.Visitor<object?>, Stmt.Visitor<object?>
 
     public object? VisitThis_Expr(Expr.This_Expr expr)
     {
+        if (_currentClass == ClassType.NONE)
+        {
+            Lox.Error(expr.keyword, "Can't use 'this' outside of a class.");
+            return null;
+        }
         ResolveLocal(expr, expr.keyword);
+        return null;
+    }
+
+    public object? VisitSuperExpr(Expr.SuperExpr expr)
+    {
+        if (_currentClass == ClassType.NONE)
+        {
+            Lox.Error(expr.keyword, "Can't use 'super' outside of a class.");
+        }
+        else if (_currentClass != ClassType.SUBCLASS)
+        {
+            Lox.Error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+        }
+        ResolveLocal(expr, expr.keyword);
+
         return null;
     }
 }

@@ -3,7 +3,7 @@ namespace Lox;
 class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 {
     public LoxEnvironment Globals { get; init; } = new LoxEnvironment();
-    public Dictionary<Expr, int> locals { get; init; } = new();
+    public Dictionary<Expr, int> Locals { get; init; } = new();
 
     private LoxEnvironment _environment;
 
@@ -190,7 +190,7 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 
     private object LookUpVariable(Token name, Expr variable)
     {
-        if (locals.TryGetValue(variable, out int dist))
+        if (Locals.TryGetValue(variable, out int dist))
         {
             var currEnv = _environment;
             for (int i = 0; i < dist; ++i)
@@ -207,7 +207,7 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
     public object VisitAssignExpr(Expr.AssignExpr assign)
     {
         var value = Evaluate(assign.value);
-        if (locals.TryGetValue(assign, out int dist))
+        if (Locals.TryGetValue(assign, out int dist))
         {
             var currEnv = _environment;
             for (int i = 0; i < dist; ++i)
@@ -317,7 +317,7 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
 
     internal void Resolve(Expr expr, int depth)
     {
-        locals[expr] = depth;
+        Locals[expr] = depth;
     }
 
     public object VisitClass_Stmt(Stmt.Class_Stmt stmt)
@@ -335,6 +335,13 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
             }
         }
         _environment.Define(stmt.name.Lexeme, null);
+
+        if (superClass != null)
+        {
+            _environment = new LoxEnvironment(_environment);
+            _environment.Define("super", superClass);
+        }
+
         Dictionary<string, LoxFunction> methods = new();
         foreach (var methodStmt in stmt.methods)
         {
@@ -344,6 +351,10 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
         }
 
         LoxClass klass = new(stmt.name.Lexeme, superClass, methods);
+        if (superClass != null)
+        {
+            _environment = _environment.Enclosing;
+        }
         _environment.Assign(stmt.name, klass);
         return klass;
     }
@@ -374,5 +385,20 @@ class Interpreter : Expr.Visitor<Object>, Stmt.Visitor<object>
     public object VisitThis_Expr(Expr.This_Expr expr)
     {
         return LookUpVariable(expr.keyword, expr);
+    }
+
+    public object VisitSuperExpr(Expr.SuperExpr expr)
+    {
+        int distance = Locals[expr];
+        LoxClass superclass = (LoxClass)_environment.GetAt(distance, "super");
+
+        LoxInstance obj = (LoxInstance)_environment.GetAt(distance -1, "this");
+        LoxFunction method = superclass.FindMethod(expr.method.Lexeme);
+
+        if (method == null)
+        {
+            throw new RuntimeError(expr.method, "Undefined property '" + expr.method.Lexeme + "'.");
+        }
+        return method.bind(obj);
     }
 }

@@ -383,14 +383,17 @@ class Parser
     }
 
 
-    /**
-     * primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
-     */
     private Expr Primary()
     {
         if (Match(TokenType.FALSE)) return new Expr.LiteralExpr(false);
         if (Match(TokenType.TRUE)) return new Expr.LiteralExpr(true);
         if (Match(TokenType.NIL)) return new Expr.LiteralExpr(null);
+        if(Match(TokenType.SUPER)){
+            var keyword = Previous();
+            Consume(TokenType.DOT, "Expect '.' after 'super'.");
+            var method = Consume(TokenType.IDENTIFIER, "Expect superclass method name.");
+            return new Expr.SuperExpr(keyword, method);
+        }
         if (Match(TokenType.THIS)) return new Expr.This_Expr(Previous());
 
         if (Match(TokenType.NUMBER, TokenType.STRING))

@@ -14,6 +14,7 @@ public interface Visitor<T> {
       public T VisitThis_Expr(This_Expr this_);
       public T VisitUnaryExpr(UnaryExpr unary);
       public T VisitGet_Expr(Get_Expr get_);
+      public T VisitSuperExpr(SuperExpr super);
       public T VisitCallExpr(CallExpr call);
       public T VisitVariableExpr(VariableExpr variable);
 }
@@ -115,6 +116,17 @@ public interface Visitor<T> {
       }
       public override T Accept<T>(Visitor<T> visitor) {
           return visitor.VisitGet_Expr(this);
+      }
+  }
+  public class SuperExpr: Expr{
+      public readonly Token keyword;
+      public readonly Token method;
+      public SuperExpr(Token keyword, Token method) {
+          this.keyword = keyword;
+          this.method = method;
+      }
+      public override T Accept<T>(Visitor<T> visitor) {
+          return visitor.VisitSuperExpr(this);
       }
   }
   public class CallExpr: Expr{
